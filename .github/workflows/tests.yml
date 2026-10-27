@@ -25,3 +25,11 @@ jobs:
           az-private-ready assess tests/fixtures/broken.json --output /tmp/report.md
           rc=$?
           test "$rc" -eq 2
+  bicep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile subscription Bicep with Azure CLI
+        uses: azure/cli@v2
+        with:
+          inlineScript: az bicep build --file infra/main.bicep

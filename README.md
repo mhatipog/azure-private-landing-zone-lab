@@ -70,6 +70,6 @@ az-private-ready probe mystorage.blob.core.windows.net --expected-ip 10.85.0.7
 
 ## Development
 
-Python 3.10+, no runtime dependencies. `python -m unittest discover -s tests -v`. The Bicep deployment path additionally requires Azure CLI, Bicep extension and sufficient Azure permissions. The CI pipeline deliberately doesn't deploy or authenticate.
+Python 3.10+, no runtime dependencies. `python -m unittest discover -s tests -v`. The Bicep deployment path additionally requires Azure CLI, Bicep extension and sufficient Azure permissions. GitHub CI tests the offline checker and attempts a static Bicep build; it never deploys or authenticates.
 
 MIT licensed. Contributions and corrections welcome; open an issue with a sanitized fixture and expected/actual finding. **Never paste a live tenant export with identifiers, secrets or connection strings into a public issue.**

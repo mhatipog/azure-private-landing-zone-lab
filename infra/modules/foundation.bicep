@@ -12,7 +12,7 @@ var firewallSubnetPrefix = '10.84.0.0/26'
 var endpointsPrefix = '10.85.0.0/24'
 var containerInfrastructurePrefix = '10.85.4.0/23'
 var storageName = 'plz${environment}${uniqueString(resourceGroup().id)}'
-var vaultName = 'kv-${prefix}-${uniqueString(resourceGroup().id)}'
+var vaultName = 'kv${environment}${uniqueString(resourceGroup().id)}'
 
 resource hub 'Microsoft.Network/virtualNetworks@2024-05-01' = {
   name: '${prefix}-hub'
