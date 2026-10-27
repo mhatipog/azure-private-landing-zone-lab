@@ -1,0 +1,75 @@
+# Manually triggered, READ ONLY. A REVIEW decision must be approved in the actual
+# deployment pipeline's separately protected Azure DevOps Environment.
+# No apply, create, or rollback commands in this pipeline.
+trigger: none
+pr: none
+parameters:
+- name: serviceConnection
+  type: string
+  default: REPLACE_WITH_AZURE_WIF_SERVICE_CONNECTION
+- name: agentPool
+  type: string
+  default: REPLACE_WITH_TRUSTED_SELF_HOSTED_POOL
+- name: environment
+  type: string
+  default: dev
+- name: location
+  type: string
+  default: westeurope
+- name: contractPath
+  type: string
+  default: contracts/dev-services.json
+- name: monitorSpecPath
+  type: string
+  default: contracts/dev-monitor.json
+- name: coveragePath
+  type: string
+  default: contracts/dev-coverage.json
+pool:
+  name: ${{ parameters.agentPool }}
+stages:
+- stage: Preflight
+  jobs:
+  - job: Evaluate
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: 'ARM what-if, risk and impact coverage (no deployment)'
+      inputs:
+        azureSubscription: ${{ parameters.serviceConnection }}
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          python -m pip install -e .
+          mkdir -p evidence
+          az deployment sub what-if \
+            --location '${{ parameters.location }}' \
+            --template-file infra/main.bicep \
+            --parameters environment='${{ parameters.environment }}' \
+              costAcknowledgement=I_ACCEPT_AZURE_CHARGES \
+            --result-format FullResourcePayloads --no-pretty-print -o json > evidence/whatif.json
+          set +e
+          az-private-ready gate-whatif evidence/whatif.json --output evidence/plan.json
+          plan_rc=$?
+          set -e
+          if [ "$plan_rc" -eq 3 ]; then exit 3; fi
+          python - <<'PY'
+          import json, sys
+          plan = json.load(open('evidence/plan.json', encoding='utf-8'))
+          if plan['decision'] == 'BLOCK':
+              print('##vso[task.logissue type=error]Predicted unsafe deployment; do not apply')
+              sys.exit(2)
+          if plan['decision'] == 'REVIEW':
+              print('##vso[task.logissue type=warning]ARM what-if requires independent human review. This pipeline does not approve or deploy.')
+          PY
+          az-private-ready coverage-gate evidence/whatif.json \
+            '${{ parameters.contractPath }}' \
+            '${{ parameters.monitorSpecPath }}' \
+            '${{ parameters.coveragePath }}' --output evidence/coverage.json
+    - task: PublishPipelineArtifact@1
+      condition: always()
+      inputs:
+        targetPath: evidence
+        artifact: azure-assurance-preflight
+      continueOnError: true

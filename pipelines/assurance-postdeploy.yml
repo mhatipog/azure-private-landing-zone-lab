@@ -1,0 +1,50 @@
+# Manually started or connected to an *approved* deployment stage.
+# Run on a self-hosted agent within the intended Azure VNet; no Azure writes.
+# The monitoring spec and target contract MUST be separately code-reviewed.
+trigger: none
+pr: none
+parameters:
+- name: serviceConnection
+  type: string
+  default: REPLACE_WITH_AZURE_WIF_SERVICE_CONNECTION
+- name: vnetAgentPool
+  type: string
+  default: REPLACE_WITH_VNET_INJECTED_SELF_HOSTED_POOL
+- name: contractPath
+  type: string
+  default: contracts/dev-services.json
+- name: monitorSpecPath
+  type: string
+  default: contracts/dev-monitor.json
+- name: workspaceId
+  type: string
+  default: REPLACE_WITH_LOG_ANALYTICS_WORKSPACE_GUID
+pool:
+  name: ${{ parameters.vnetAgentPool }}
+stages:
+- stage: PostDeployVerification
+  jobs:
+  - job: Verify
+    steps:
+    - checkout: self
+    - task: AzureCLI@2
+      displayName: 'Prove private DNS / TLS / health from inside VNet and read Connection Monitor'
+      inputs:
+        azureSubscription: ${{ parameters.serviceConnection }}
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          set -euo pipefail
+          python -m pip install -e .
+          mkdir -p evidence
+          az-private-ready verify '${{ parameters.contractPath }}' \
+            --samples 5 --interval 2 --output evidence/service-contract.json
+          export LOG_ANALYTICS_WORKSPACE_ID='${{ parameters.workspaceId }}'
+          export MONITOR_SPEC='${{ parameters.monitorSpecPath }}'
+          bash scripts/live_monitor_gate.sh
+    - task: PublishPipelineArtifact@1
+      condition: always()
+      inputs:
+        targetPath: evidence
+        artifact: azure-assurance-postdeploy
+      continueOnError: true

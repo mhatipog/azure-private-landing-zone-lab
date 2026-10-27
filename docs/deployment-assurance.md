@@ -26,6 +26,20 @@ are BLOCK. `REVIEW` must be reviewed; never turn it into automatic approval with
 DevOps Environment check. No command in this repository silently deploys, fixes
 firewalls, trusts unapproved addresses, or rolls anything back.
 
+## Azure DevOps operational examples
+
+The separate, manually triggered [preflight pipeline](../pipelines/assurance-preflight.yml)
+performs ARM what-if, identifies BLOCK/REVIEW, enforces impact coverage and
+publishes evidence **without deploying**. The [postdeploy verification
+pipeline](../pipelines/assurance-postdeploy.yml) executes authenticated Azure
+CLI collection and in-VNet runtime probes after deployment, then publishes
+observations. Both require an explicitly configured Azure service connection,
+reviewed contract files and a trusted agent pool. These YAML templates have
+not been run against an Azure DevOps organization here; review/test in a
+non-production project first. Azure DevOps Environment manual approval rules
+must be configured independently on the actual deployment stage—neither of
+these diagnostic pipelines grants deployment approval.
+
 ## 1. Offline reproducibility before changing Azure
 
 ```sh
