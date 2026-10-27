@@ -23,6 +23,24 @@ python -m unittest discover -s tests -v
 
 The broken fixture intentionally exits `2`; an input error exits `3`, while a successful assessment exits `0`. Use `--fail-on none` for evidence-only reports.
 
+## Offline end-to-end validation (no Azure subscription required)
+
+The toolkit includes a deterministic Azure-style estate simulator and a full CLI
+verification harness. It checks mock-paginated Resource Graph export, subnet
+field-preservation, 4 injected failures, drift/SARIF, waivers, missing-evidence
+semantics, effective routes, topology and performance at scale.
+
+```bash
+python -m pip install -e .
+python scripts/offline_validation.py --spokes 6 --benchmarks 10,100,1000,2000 --repeat 5 --output offline-results.json
+az-private-ready simulate --spokes 5 --inject-faults --output synthetic-failures.json
+az-private-ready assess synthetic-failures.json --relationships --format sarif --output findings.sarif
+```
+
+Every generated snapshot explicitly declares `SYNTHETIC_OFFLINE_FIXTURE`:
+passing simulated checks is **not evidence from a live Azure tenant**.
+See [E2E methodology, performance metrics, and offline/live validation limits](docs/offline-validation.md).
+
 ## Features
 
 | Component | Practical value |

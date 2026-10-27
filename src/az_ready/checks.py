@@ -93,10 +93,12 @@ def has_sensitive_port(rule: dict) -> bool:
 def assess(resources: Iterable[dict]) -> list[Finding]:
     """Analyze resources without network access or external credentials."""
     out: list[Finding] = []
-    items = sorted(resources, key=lambda r: str(r.get("id", "")).lower())
+    items = list(resources)
     for r in items:
-        if not isinstance(r, dict) or not isinstance(r.get("id"), str):
-            raise ValueError("Each resource must be an object with a string 'id'")
+        if not isinstance(r, dict) or not isinstance(r.get("id"), str) or not r["id"].strip():
+            raise ValueError("Each resource must be an object with a nonempty string 'id'")
+    items.sort(key=lambda r: r["id"].casefold())
+    for r in items:
         t = str(r.get("type", "")).lower()
         if t == "microsoft.network/virtualnetworks/virtualnetworkpeerings":
             for rule, prop, wanted in (
@@ -106,6 +108,8 @@ def assess(resources: Iterable[dict]) -> list[Finding]:
                 out.append(check_property(r, rule, prop, wanted, "high", "Check both sides of VNet peering and routing."))
         elif t == "microsoft.network/routetables":
             routes = get(r, "properties.routes")
+            if routes is not None and not isinstance(routes, list):
+                raise ValueError("Route table routes must be a list if present")
             if routes is None:
                 out.append(emit("DEFAULT_ROUTE", r["id"], "high", None, None, "Export routeTable.properties.routes."))
             else:
@@ -117,6 +121,8 @@ def assess(resources: Iterable[dict]) -> list[Finding]:
                                 "Set 0.0.0.0/0 -> VirtualAppliance with the approved firewall private IP. Confirm the table is associated with relevant subnets."))
         elif t == "microsoft.network/networksecuritygroups":
             rules = get(r, "properties.securityRules")
+            if rules is not None and not isinstance(rules, list):
+                raise ValueError("NSG securityRules must be a list if present")
             out.append(emit("NSG_PUBLIC_ADMIN", r["id"], "high",
                             None if rules is None else [get(x, "name") for x in rules if has_sensitive_port(x)],
                             None if rules is None else not any(has_sensitive_port(x) for x in rules),

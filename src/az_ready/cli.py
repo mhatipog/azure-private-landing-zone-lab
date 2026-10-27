@@ -12,6 +12,7 @@ from .effective_routes import evaluate_routes
 from .probe import probe
 from .relationships import assess_relationships
 from .reports import apply_waivers, diff, json_report, stats, to_sarif
+from .simulator import inject_faults, simulate_estate
 from .topology import validate_topology
 
 
@@ -96,8 +97,20 @@ def main(argv: list[str] | None = None) -> int:
     er.add_argument("--firewall-ip", help="Expected Azure Firewall private IPv4 address")
     er.add_argument("--nic-id", default="nic")
     er.add_argument("--output", type=Path)
+    sim = sub.add_parser("simulate", help="Generate explicitly synthetic, deterministic Azure-style JSON inventory (offline)")
+    sim.add_argument("--spokes", type=int, default=1, help="Synthetic spoke count 1..60000")
+    sim.add_argument("--inject-faults", action="store_true", help="Mutate four security controls in spoke 0")
+    sim.add_argument("--output", required=True, type=Path, help="Required output path to avoid accidental stdout flooding")
     ns = p.parse_args(argv)
     try:
+        if ns.command == "simulate":
+            resources = simulate_estate(ns.spokes)
+            if ns.inject_faults:
+                resources, _ = inject_faults(resources)
+            _write(json.dumps({"schemaVersion": 1, "source": "SYNTHETIC_OFFLINE_FIXTURE",
+                               "notLiveAzureEvidence": True, "resources": resources},
+                              indent=2) + "\n", ns.output)
+            return 0
         if ns.command == "probe":
             result = probe(ns.hostname, ns.expected_ip, ns.port, ns.timeout)
             print(json.dumps(result, indent=2))

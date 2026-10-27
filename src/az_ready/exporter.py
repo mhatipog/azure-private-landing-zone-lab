@@ -56,7 +56,7 @@ FIELDS = {
 
 # Nested fields are reduced too. Sensitive strings cannot be extracted by default.
 NESTED = {
-    "microsoft.network/virtualnetworks": {"subnets": {"id": None, "name": None, "properties": {"addressPrefix": None, "addressPrefixes": None, "networkSecurityGroup": {"id": None}, "routeTable": {"id": None}, "delegations": [{"name": None}]}}},
+    "microsoft.network/virtualnetworks": {"subnets": [{"id": None, "name": None, "properties": {"addressPrefix": None, "addressPrefixes": None, "networkSecurityGroup": {"id": None}, "routeTable": {"id": None}, "delegations": [{"name": None}]}}]},
     "microsoft.network/networksecuritygroups": {"securityRules": [{"name": None, "properties": {"direction": None, "access": None, "priority": None, "sourceAddressPrefix": None, "sourceAddressPrefixes": None, "destinationPortRange": None, "destinationPortRanges": None}}]},
     "microsoft.network/routetables": {"routes": [{"name": None, "properties": {"addressPrefix": None, "nextHopType": None, "nextHopIpAddress": None}}]},
     "microsoft.network/azurefirewalls": {"ipConfigurations": [{"properties": {"privateIPAddress": None}}]},

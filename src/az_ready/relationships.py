@@ -22,6 +22,16 @@ def _subnets(vnet: dict) -> list[dict]:
 def assess_relationships(resources: Iterable[dict]) -> list[Finding]:
     items = list(resources)
     by_id = {_id(r.get("id")): r for r in items}
+    # Index zone-group children once. A linear scan per endpoint makes estates
+    # with thousands of Private Endpoints quadratic (measured in benchmarks).
+    zone_group_counts: dict[str, int] = {}
+    for candidate in items:
+        if str(candidate.get("type", "")).casefold() != "microsoft.network/privateendpoints/privatednszonegroups":
+            continue
+        child_id = _id(candidate.get("id"))
+        parent, sep, _ = child_id.rpartition("/privatednszonegroups/")
+        if sep:
+            zone_group_counts[parent] = zone_group_counts.get(parent, 0) + 1
     out: list[Finding] = []
     firewall_ips: set[str] = set()
     for r in items:
@@ -86,9 +96,9 @@ def assess_relationships(resources: Iterable[dict]) -> list[Finding]:
                         out.append(emit("SUBNET_NO_OVERLAP", rid, "high", prefix, False, "Fix invalid subnet CIDR."))
         elif t == "microsoft.network/privateendpoints":
             # Absence of child resource in Resource Graph is not proof of missing zone group.
-            child = [x for key, x in by_id.items() if key.startswith(rid + "/privatednszonegroups/")]
-            out.append(emit("PE_ZONE_GROUP_PRESENT", rid, "medium", len(child) if child else None,
-                            True if child else None,
+            count = zone_group_counts.get(rid, 0)
+            out.append(emit("PE_ZONE_GROUP_PRESENT", rid, "medium", count if count else None,
+                            True if count else None,
                             "Export child DNS zone group or verify private DNS integration in portal."))
             targets = _list(get(r, "properties.privateLinkServiceConnections")) + _list(get(r, "properties.manualPrivateLinkServiceConnections"))
             for target in targets:
