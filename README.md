@@ -6,6 +6,27 @@ A useful engineering toolkit for Azure platform teams operating hub-spoke landin
 
 > **Safety boundary:** Reference implementation, not a certified secure landing zone or an automatic production remediation engine. No resources are created until an engineer explicitly opts into an Azure deployment. Offline fixtures are synthetic; a `PASS` covers only an observed property, not effective connectivity or ISO/NIS2 compliance.
 
+## Release assurance for AI-assisted infrastructure changes (v0.4)
+
+Compiling AI-generated IaC is not enough. This project now provides a bounded
+**release assurance** workflow: assess ARM what-if, require review of risky changes,
+map changed resources to behavioral tests, execute actual private DNS/TLS/HTTP
+contracts from a VNet-connected agent, and evaluate fresh Azure Network Watcher
+monitoring evidence. No automatic provisioning, firewall fixes or rollback.
+
+Offline demo with **real ephemeral loopback HTTPS**, no subscription or cost:
+
+```bash
+python -m pip install -e .
+python scripts/assurance_demo.py --rounds 40 --output assurance-demo.json
+az-private-ready gate-whatif examples/assurance/whatif.demo.json
+# exits 2: predicted Storage public exposure is blocked
+```
+
+New commands: `gate-whatif`, `coverage-gate`, `verify`, `monitor-gate`, `receipt`.
+See [deployment assurance documentation](docs/deployment-assurance.md) for the
+Azure-specific process, CI/approvals, evidence boundaries and monitoring.
+
 ## Why build this?
 
 A cloud configuration can look private in ARM/Bicep while traffic still fails because DNS has the wrong forwarding path, a route table is unassociated, or a subnet points to an old firewall IP. This project makes those gaps **visible, testable and actionable**, and keeps missing evidence separate from failures.

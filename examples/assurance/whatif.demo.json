@@ -1,0 +1,11 @@
+{
+  "status":"Succeeded",
+  "properties":{
+    "changes":[
+      {"resourceId":"/subscriptions/demo/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/example","changeType":"Modify",
+       "delta":[{"path":"properties.publicNetworkAccess","propertyChangeType":"Modify","before":"Disabled","after":"Enabled"}],
+       "after":{"type":"Microsoft.Storage/storageAccounts","properties":{"publicNetworkAccess":"Enabled"}}}
+    ],
+    "diagnostics":[]
+  }
+}

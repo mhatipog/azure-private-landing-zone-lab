@@ -1,0 +1,8 @@
+// Supply a trusted Log Analytics workspace containing Azure Network Watcher
+// Connection Monitor records. No matching rows MUST be treated as missing evidence,
+// not as 'healthy'. Do not filter away failures or non-Pass states.
+NWConnectionMonitorTestResult
+| where TimeGenerated > ago(30m)
+| project TimeGenerated, SourceName, DestinationName, TestConfigurationName,
+          TestResult, ChecksFailed, ChecksTotal, AvgRoundTripTimeMs
+| order by TimeGenerated desc

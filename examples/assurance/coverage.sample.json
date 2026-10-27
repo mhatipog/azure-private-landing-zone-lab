@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "resourceCoverage": [
+    {
+      "resourceIdPrefix": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-plz-dev/providers/Microsoft.App/managedEnvironments/",
+      "requiredProbes": ["internal-api-health"],
+      "requiredMonitors": [
+        {"source": "spoke-dev-checker", "destination": "api-internal", "configuration": "https-health"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "vantagePoint": "spoke-dev-self-hosted-agent (operator-declared, not authenticated by this CLI)",
+  "targets": [
+    {
+      "name": "internal-api-health",
+      "host": "api.example.internal",
+      "expectedIPs": ["10.85.4.8"],
+      "port": 443,
+      "path": "/health",
+      "expectedStatus": [200],
+      "maxLatencyMs": 1500,
+      "timeoutSeconds": 3
+    }
+  ]
+}

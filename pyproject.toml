@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "azure-private-readiness"
-version = "0.3.0"
-description = "Azure private landing zone readiness, Resource Graph inventory and network relationship checks"
+version = "0.4.0"
+description = "Azure deployment assurance: what-if risk gates, in-network verification, monitoring evidence and private landing zone readiness"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

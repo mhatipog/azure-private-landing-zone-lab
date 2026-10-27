@@ -6,6 +6,10 @@ import json
 import sys
 from pathlib import Path
 
+from .assurance import gate_what_if, verify_contract
+from .release import release_receipt
+from .monitor import gate_monitor
+from .coverage import gate_coverage
 from .checks import Finding, assess
 from .exporter import export
 from .effective_routes import evaluate_routes
@@ -101,8 +105,65 @@ def main(argv: list[str] | None = None) -> int:
     sim.add_argument("--spokes", type=int, default=1, help="Synthetic spoke count 1..60000")
     sim.add_argument("--inject-faults", action="store_true", help="Mutate four security controls in spoke 0")
     sim.add_argument("--output", required=True, type=Path, help="Required output path to avoid accidental stdout flooding")
+    wi = sub.add_parser("gate-whatif", help="Fail-closed gate over full ARM what-if JSON (never deploys)")
+    wi.add_argument("whatif", type=Path)
+    wi.add_argument("--protected-prefix", action="append", default=[], help="Resource ID prefix never allowed to change")
+    wi.add_argument("--output", type=Path)
+    v = sub.add_parser("verify", help="DNS/TLS/HTTP service contract from an intentionally VNet-connected runner")
+    v.add_argument("contract", type=Path)
+    v.add_argument("--output", type=Path)
+    v.add_argument("--samples", type=int, default=1, help="Repeated tests, maximum 30")
+    v.add_argument("--interval", type=float, default=0, help="Seconds between samples, maximum 60")
+    v.add_argument("--local-test-only", action="store_true", help="Permit loopback IPs for ephemeral local tests, not Azure verification")
+    receipt = sub.add_parser("receipt", help="Hash-link preflight and runtime reports without implying approval")
+    receipt.add_argument("plan", type=Path)
+    receipt.add_argument("runtime", type=Path)
+    receipt.add_argument("--release-id", required=True)
+    receipt.add_argument("--monitor", type=Path, help="Reviewed, recent Connection Monitor gate report")
+    receipt.add_argument("--coverage", type=Path, help="Change-to-test coverage gate report")
+    receipt.add_argument("--require-complete", action="store_true", help="Fail on partial evidence as well as blocked/review states")
+    receipt.add_argument("--output", type=Path)
+    monitor = sub.add_parser("monitor-gate", help="Fail closed on stale/missing/failed Azure Connection Monitor KQL evidence")
+    monitor.add_argument("telemetry", type=Path, help="JSON returned by az monitor log-analytics query")
+    monitor.add_argument("spec", type=Path, help="Exact monitored paths and failure thresholds")
+    monitor.add_argument("--output", type=Path)
+    coverage = sub.add_parser("coverage-gate", help="Require explicit behavioral probes and monitoring for every predicted changed resource")
+    coverage.add_argument("whatif", type=Path)
+    coverage.add_argument("contract", type=Path)
+    coverage.add_argument("monitor_spec", type=Path)
+    coverage.add_argument("mapping", type=Path)
+    coverage.add_argument("--output", type=Path)
     ns = p.parse_args(argv)
     try:
+        if ns.command == "coverage-gate":
+            result = gate_coverage(*[json.loads(path.read_text(encoding="utf-8"))
+                                     for path in (ns.whatif, ns.contract, ns.monitor_spec, ns.mapping)])
+            _write(json.dumps(result, indent=2) + "\n", ns.output)
+            return 2 if result["decision"] == "FAIL" else 0
+        if ns.command == "monitor-gate":
+            verdict = gate_monitor(json.loads(ns.telemetry.read_text(encoding="utf-8")),
+                                   json.loads(ns.spec.read_text(encoding="utf-8")))
+            _write(json.dumps(verdict, indent=2) + "\n", ns.output)
+            return 0 if verdict["decision"] == "PASS" else 2
+        if ns.command == "gate-whatif":
+            plan = gate_what_if(json.loads(ns.whatif.read_text(encoding="utf-8")),
+                                protected=ns.protected_prefix)
+            _write(json.dumps(plan, indent=2) + "\n", ns.output)
+            return 0 if plan["decision"] == "PASS" else 2
+        if ns.command == "verify":
+            verified = verify_contract(json.loads(ns.contract.read_text(encoding="utf-8")),
+                                       allow_loopback=ns.local_test_only, samples=ns.samples,
+                                       interval=ns.interval)
+            _write(json.dumps(verified, indent=2) + "\n", ns.output)
+            return 0 if verified["decision"] == "PASS" else 2
+        if ns.command == "receipt":
+            result = release_receipt(json.loads(ns.plan.read_text(encoding="utf-8")),
+                                     json.loads(ns.runtime.read_text(encoding="utf-8")),
+                                     release_id=ns.release_id,
+                                     monitor=json.loads(ns.monitor.read_text(encoding="utf-8")) if ns.monitor else None,
+                                     coverage=json.loads(ns.coverage.read_text(encoding="utf-8")) if ns.coverage else None)
+            _write(json.dumps(result, indent=2) + "\n", ns.output)
+            return 2 if result["verdict"] in ("BLOCK", "REQUIRES_HUMAN_APPROVAL") or (ns.require_complete and result["verdict"] != "EVIDENCE_CHECKS_PASSED_NOT_ATTESTED") else 0
         if ns.command == "simulate":
             resources = simulate_estate(ns.spokes)
             if ns.inject_faults:

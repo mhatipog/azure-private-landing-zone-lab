@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "maxAgeMinutes": 30,
+  "maxFailureRate": 0.02,
+  "minChecks": 10,
+  "expectedTests": [
+    {"source": "spoke-dev-checker", "destination": "api-internal", "configuration": "https-health"}
+  ]
+}

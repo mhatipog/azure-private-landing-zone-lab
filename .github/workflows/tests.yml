@@ -27,6 +27,16 @@ jobs:
           path: offline-validation.json
           if-no-files-found: ignore
           retention-days: 14
+      - name: Real ephemeral TLS / HTTP deployment assurance integration
+        run: python scripts/assurance_demo.py --rounds 20 --output assurance-demo.json
+      - name: Retain release assurance demo evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: assurance-local-integration
+          path: assurance-demo.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Run compliant fixture
         run: az-private-ready assess tests/fixtures/compliant.json --format json
       - name: Verify non-compliant fixture fails
