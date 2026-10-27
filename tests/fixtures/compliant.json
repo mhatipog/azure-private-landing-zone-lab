@@ -1,0 +1,18 @@
+{
+  "resources": [
+    {"id":"/demo/route","type":"Microsoft.Network/routeTables","properties":{"routes":[{"name":"egress","properties":{"addressPrefix":"0.0.0.0/0","nextHopType":"VirtualAppliance","nextHopIpAddress":"10.0.0.4"}}]}},
+    {"id":"/demo/peer","type":"Microsoft.Network/virtualNetworks/virtualNetworkPeerings","properties":{"peeringState":"Connected","allowForwardedTraffic":true}},
+    {"id":"/demo/nsg","type":"Microsoft.Network/networkSecurityGroups","properties":{"securityRules":[]}},
+    {"id":"/demo/firewall-policy","type":"Microsoft.Network/firewallPolicies","properties":{"sku":{"tier":"Premium"},"dnsSettings":{"enableProxy":true},"intrusionDetection":{"mode":"Deny"}}},
+    {"id":"/demo/pe","type":"Microsoft.Network/privateEndpoints","properties":{"privateLinkServiceConnections":[{"properties":{"privateLinkServiceConnectionState":{"status":"Approved"}}}]}},
+    {"id":"/demo/pe/dns","type":"Microsoft.Network/privateEndpoints/privateDnsZoneGroups","properties":{"privateDnsZoneConfigs":[{"name":"blob"}]}},
+    {"id":"/demo/dnslink","type":"Microsoft.Network/privateDnsZones/virtualNetworkLinks","properties":{"virtualNetworkLinkState":"Completed"}},
+    {"id":"/demo/storage","type":"Microsoft.Storage/storageAccounts","properties":{"publicNetworkAccess":"Disabled","allowSharedKeyAccess":false,"minimumTlsVersion":"TLS1_2"}},
+    {"id":"/demo/kv","type":"Microsoft.KeyVault/vaults","properties":{"publicNetworkAccess":"Disabled","enableRbacAuthorization":true,"networkAcls":{"defaultAction":"Deny"}}},
+    {"id":"/demo/sql","type":"Microsoft.Sql/servers","properties":{"publicNetworkAccess":"Disabled"}},
+    {"id":"/demo/sql/auth","type":"Microsoft.Sql/servers/azureADOnlyAuthentications","properties":{"azureADOnlyAuthentication":true}},
+    {"id":"/demo/servicebus","type":"Microsoft.ServiceBus/namespaces","properties":{"publicNetworkAccess":"Disabled","disableLocalAuth":true}},
+    {"id":"/demo/aca","type":"Microsoft.App/managedEnvironments","properties":{"vnetConfiguration":{"internal":true},"publicNetworkAccess":"Disabled"}},
+    {"id":"/demo/apim","type":"Microsoft.ApiManagement/service","properties":{"publicNetworkAccess":"Disabled"}}
+  ]
+}

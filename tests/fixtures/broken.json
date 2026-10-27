@@ -1,0 +1,10 @@
+{
+  "resources": [
+    {"id":"/demo/route","type":"Microsoft.Network/routeTables","properties":{"routes":[{"name":"default","properties":{"addressPrefix":"0.0.0.0/0","nextHopType":"Internet"}}]}},
+    {"id":"/demo/firewall","type":"Microsoft.Network/firewallPolicies","properties":{"sku":{"tier":"Standard"},"dnsSettings":{"enableProxy":false},"intrusionDetection":{"mode":"Alert"}}},
+    {"id":"/demo/nsg","type":"Microsoft.Network/networkSecurityGroups","properties":{"securityRules":[{"name":"danger","properties":{"direction":"Inbound","access":"Allow","sourceAddressPrefix":"*","destinationPortRange":"3389"}}]}},
+    {"id":"/demo/pe","type":"Microsoft.Network/privateEndpoints","properties":{"privateLinkServiceConnections":[{"properties":{"privateLinkServiceConnectionState":{"status":"Pending"}}}]}},
+    {"id":"/demo/kv","type":"Microsoft.KeyVault/vaults","properties":{"publicNetworkAccess":"Enabled","enableRbacAuthorization":false,"networkAcls":{"defaultAction":"Allow"}}},
+    {"id":"/demo/storage","type":"Microsoft.Storage/storageAccounts","properties":{"publicNetworkAccess":"Enabled","allowSharedKeyAccess":true,"minimumTlsVersion":"TLS1_0"}}
+  ]
+}

@@ -1,0 +1,26 @@
+# Import this pipeline in Azure DevOps. Service connection should use workload identity federation.
+# Approvals are configured on each Azure DevOps Environment, not here in YAML.
+trigger: none
+pr: none
+
+parameters:
+- name: apply
+  displayName: Actually deploy (disabled by default)
+  type: boolean
+  default: false
+
+variables:
+  azureServiceConnection: 'REPLACE_WITH_OIDC_SERVICE_CONNECTION'
+  azureLocation: 'westeurope'
+
+stages:
+- template: stage.yml
+  parameters: { name: dev, dependsOn: '', apply: '${{ parameters.apply }}' }
+- template: stage.yml
+  parameters: { name: test, dependsOn: dev, apply: '${{ parameters.apply }}' }
+- template: stage.yml
+  parameters: { name: acc, dependsOn: test, apply: '${{ parameters.apply }}' }
+- template: stage.yml
+  parameters: { name: preprod, dependsOn: acc, apply: '${{ parameters.apply }}' }
+- template: stage.yml
+  parameters: { name: prod, dependsOn: preprod, apply: '${{ parameters.apply }}' }

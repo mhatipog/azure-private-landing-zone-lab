@@ -1,0 +1,53 @@
+parameters:
+- name: name
+  type: string
+- name: dependsOn
+  type: string
+- name: apply
+  type: string
+
+stages:
+- stage: ${{ parameters.name }}
+  displayName: '${{ parameters.name }} - validate / what-if / optional apply'
+  ${{ if ne(parameters.dependsOn, '') }}:
+    dependsOn: ${{ parameters.dependsOn }}
+  jobs:
+  - deployment: LandingZone
+    environment: 'plz-${{ parameters.name }}'
+    pool:
+      name: 'REPLACE_WITH_SELF_HOSTED_AZURE_NETWORK_AGENT_POOL'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: 'Compile, preflight, subscription what-if'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                az bicep build --file infra/main.bicep
+                az deployment sub validate \
+                  --location "$(azureLocation)" --template-file infra/main.bicep \
+                  --parameters environment='${{ parameters.name }}' \
+                    costAcknowledgement=I_ACCEPT_AZURE_CHARGES
+                az deployment sub what-if \
+                  --location "$(azureLocation)" --template-file infra/main.bicep \
+                  --parameters environment='${{ parameters.name }}' \
+                    costAcknowledgement=I_ACCEPT_AZURE_CHARGES
+          - ${{ if eq(parameters.apply, 'True') }}:
+            - task: AzureCLI@2
+              displayName: 'Apply approved deployment'
+              inputs:
+                azureSubscription: '$(azureServiceConnection)'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  set -euo pipefail
+                  az deployment sub create \
+                    --location "$(azureLocation)" --template-file infra/main.bicep \
+                    --parameters environment='${{ parameters.name }}' \
+                      costAcknowledgement=I_ACCEPT_AZURE_CHARGES
