@@ -58,16 +58,36 @@ def check_property(resource: dict, rule: str, prop: str, desired: Any,
 
 
 def has_sensitive_port(rule: dict) -> bool:
+    """Conservative NSG exposure detection including port ranges and wildcard ports.
+
+    Reports *potential* exposure; this is not an effective-rules analysis (priority,
+    shadowing, NIC rules and upstream firewall are not resolved here).
+    """
     if str(get(rule, "properties.direction") or "").lower() != "inbound":
         return False
     if str(get(rule, "properties.access") or "").lower() != "allow":
         return False
     src = get(rule, "properties.sourceAddressPrefix")
-    sources = get(rule, "properties.sourceAddressPrefixes") or ([src] if src else [])
-    if not any(str(p).lower() in ("*", "internet", "0.0.0.0/0", "::/0") for p in sources):
+    multi = get(rule, "properties.sourceAddressPrefixes")
+    sources = multi if isinstance(multi, list) else [src]
+    if not any(str(p).strip().lower() in ("*", "internet", "0.0.0.0/0", "::/0") for p in sources):
         return False
-    ports = get(rule, "properties.destinationPortRanges") or [get(rule, "properties.destinationPortRange")]
-    return any(str(p).strip() in ("*", "22", "3389", "0-65535") for p in ports)
+    multi_ports = get(rule, "properties.destinationPortRanges")
+    ports = multi_ports if isinstance(multi_ports, list) else [get(rule, "properties.destinationPortRange")]
+    for value in ports:
+        port = str(value or "").strip()
+        if port == "*":
+            return True
+        try:
+            parts = port.split("-")
+            if len(parts) == 1 and int(parts[0]) in (22, 3389):
+                return True
+            if len(parts) == 2 and 0 <= int(parts[0]) <= int(parts[1]) <= 65535 and any(
+                    int(parts[0]) <= x <= int(parts[1]) for x in (22, 3389)):
+                return True
+        except ValueError:
+            continue
+    return False
 
 
 def assess(resources: Iterable[dict]) -> list[Finding]:

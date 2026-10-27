@@ -1,0 +1,11 @@
+{
+  "waivers": [
+    {
+      "rule": "FW_IDPS",
+      "resource_id": "/subscriptions/example/resourceGroups/demo/providers/Microsoft.Network/firewallPolicies/demo",
+      "reason": "Example only; time-boxed exception awaiting network-team approval",
+      "approved_by": "security-owner@example.invalid",
+      "expires": "2027-01-31"
+    }
+  ]
+}

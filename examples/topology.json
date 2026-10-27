@@ -1,0 +1,17 @@
+{
+  "forced_tunneling": true,
+  "vnets": [
+    {
+      "name": "hub", "cidr": "10.80.0.0/16",
+      "subnets": [{"name": "AzureFirewallSubnet", "cidr": "10.80.0.0/26", "role": "azure-firewall"}]
+    },
+    {
+      "name": "spoke", "cidr": "10.85.0.0/16",
+      "subnets": [
+        {"name": "workload", "cidr": "10.85.0.0/24", "role": "workload", "nsg": "spoke-nsg", "route_table": "spoke-egress"},
+        {"name": "private-endpoints", "cidr": "10.85.1.0/27", "role": "private-endpoints"},
+        {"name": "container-infrastructure", "cidr": "10.85.2.0/27", "role": "container-apps-workload-profiles"}
+      ]
+    }
+  ]
+}

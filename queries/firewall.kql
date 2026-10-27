@@ -1,0 +1,6 @@
+// Run in the workspace configured to emit Azure Firewall resource-specific logs.
+// Replace 1h with your incident window; tables depend on the enabled diagnostics.
+AZFWNetworkRule
+| where TimeGenerated > ago(1h)
+| summarize Hits=count() by Action, SourceIp, DestinationIp, DestinationPort, RuleCollection, Rule
+| top 100 by Hits desc

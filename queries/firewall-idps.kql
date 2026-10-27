@@ -1,0 +1,5 @@
+// Investigate IDPS hits before moving a firewall policy from Alert to Deny.
+AZFWIdpsSignature
+| where TimeGenerated > ago(24h)
+| summarize Hits=count(), LastSeen=max(TimeGenerated) by Action, SourceIp, DestinationIp, SignatureId, Description
+| top 100 by Hits desc

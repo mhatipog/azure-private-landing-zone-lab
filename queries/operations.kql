@@ -1,0 +1,6 @@
+// Activity Log must be routed to a Log Analytics workspace.
+AzureActivity
+| where TimeGenerated > ago(7d)
+| where OperationNameValue has_any ('MICROSOFT.NETWORK', 'MICROSOFT.KEYVAULT', 'MICROSOFT.STORAGE')
+| summarize Events=count() by Caller, OperationNameValue, ActivityStatusValue
+| top 100 by Events desc
